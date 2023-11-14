@@ -1,6 +1,7 @@
 import settings
 from settings import * #telnet objects must be imported, otherwise they are closed after settings.py is done
 from configrbl import *
+from go import *
 import telnetlib
 import atexit
 from resetGrbl import resetGrbl
@@ -69,6 +70,13 @@ def upd8curentpos():
 global refer_worx
 refer_worx = False
 global thread_refer
+global go_worx
+go_worx = False
+global thread_go
+global scan_worx
+scan_worx = False
+global thread_scan
+
 
 #def check_prog_limits(set_x, set_y):
 
@@ -93,7 +101,7 @@ def refer_button_click():
         thread_refer = Thread(target=refer_function)
         window.after_idle(thread_refer.start)
     else:
-        window.after_idle(thread_refer.stop)
+        #window.after_idle(thread_refer.stop)
         refer_worx=False
 
 def zero_wout_refer():
@@ -108,7 +116,9 @@ def zero_wout_refer():
     Ycurent=0.0
     upd8curentpos()
 
-def go_button_click():
+def go_function():
+    global go_worx
+    button_goto_init.config(text='GO\nWORKS...')
     global AllowEmigration
     global Xcurent
     global Ycurent
@@ -116,6 +126,7 @@ def go_button_click():
     global max_y
     set_x = entry_initpos_X.get()
     set_y = entry_initpos_Y.get()
+    '''
     print('Going to run go_button_click, emptying buffer:')
     print('RECEIVED: '+str(grbl.read_very_eager()))
     if float(set_x)>max_x or float(set_y)>max_y:
@@ -132,10 +143,25 @@ def go_button_click():
         print('RECEIVED: '+str(ans))
     ans=grbl.read_until(b'ok\r\n',timeout=2)
     print('RECEIVED: '+str(ans))
-    Xcurent=float(set_x)
-    Ycurent=float(set_y)
-    print('Current X:'+str(Xcurent)+' Y:'+str(Ycurent))
-    upd8curentpos()
+    '''
+    if go(set_x, set_y) == 0:
+        Xcurent=float(set_x)
+        Ycurent=float(set_y)
+        print('Current X:'+str(Xcurent)+' Y:'+str(Ycurent))
+        upd8curentpos()
+    go_worx = False
+    button_goto_init.config(text='GO')
+
+def go_button_click():
+    global thread_go
+    global go_worx
+    if go_worx==False:
+        go_worx=True
+        thread_go = Thread(target=go_function)
+        window.after_idle(thread_go.start)
+    else:
+        #window.after_idle(thread_go.stop)
+        go_worx=False
 
 def jog(jog_dir):
     global Xcurent
@@ -180,8 +206,10 @@ def jog(jog_dir):
     Ycurent = y_new
     upd8curentpos()
 
-def scan():
-    go_button_click()
+def scan_function():
+    global scan_worx
+    scan_worx = True
+    button_start.config(text='SCAN\nWORKS...')
     global Xcurent
     global Ycurent
     global max_x
@@ -226,6 +254,18 @@ def scan():
         ans=grbl.read_until(b'ok\r\n')
         print('RECEIVED: '+str(ans))
         upd8curentpos()
+    scan_worx = False
+    button_start.config(text='START')
+
+def scan_button_click():
+    global thread_scan
+    global scan_worx
+    if scan_worx==False:
+        scan_worx=True
+        thread_scan = Thread(target=scan_function)
+        window.after_idle(thread_scan.start)
+    else:
+        scan_worx=False
 
 ############################# CHECK GRBL CONFIGURATION ########################
 time.sleep(0.1)
@@ -301,7 +341,7 @@ label_speed.grid(row=6, column=0, padx=5, pady=5)
 entry_speed = Entry(master=frame_move_params)
 entry_speed.grid(row=6, column=1, padx=5, pady=5)
 #buttons
-button_start = Button(master=frame_move_params, text="START", height = 3, width=10, bg='green', fg='black', font=(100), command=scan)
+button_start = Button(master=frame_move_params, text="START", height = 3, width=10, bg='green', fg='black', font=(100), command=scan_button_click)
 button_start.grid(row=7, column=0, padx=5, pady=5)
 button_pause= Button(master=frame_move_params, text="PAUSE", height = 3, width=10, bg='orange', fg='black', font=(100))
 button_pause.grid(row=7, column=1, padx=5, pady=5)
