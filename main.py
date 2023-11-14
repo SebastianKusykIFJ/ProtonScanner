@@ -1,5 +1,6 @@
 import settings
 from settings import * #telnet objects must be imported, otherwise they are closed after settings.py is done
+from configrbl import *
 import telnetlib
 import atexit
 from resetGrbl import resetGrbl
@@ -7,14 +8,56 @@ from refer import refer
 from tkinter import *
 from tkinter import ttk
 import time
-
-global Xcurent
-global Ycurent
-Xcurent=0.0
-Ycurent=0.0
+from threading import Thread
 
 settings.init()
 resetGrbl()
+
+def receiveArdu2():
+    print("THREAD RECEIVING FEEDBACK DATA STARTED")
+    while True:
+        l=tn2.read_until(b'\n')
+        print('odebrano od Arduino 2:'+str(l))
+        if str(l)[2:4]=='01':
+            print('V')
+            label_X_ok.config(bg="#00FF00")
+            label_X_diff.config(bg="#550")
+            label_X_error.config(bg="#500")
+        elif str(l)[2:4]=='11':
+            print("...")
+            label_X_ok.config(bg="#050")
+            label_X_diff.config(bg="#FFFF00")
+            label_X_error.config(bg="#500")
+        elif str(l)[2:4]=='00' or str(l)[2:4]=='10':
+            print("X")
+            label_X_ok.config(bg="#050")
+            label_X_diff.config(bg="#550")
+            label_X_error.config(bg="#FF0000")
+        
+        if str(l)[4:6]=='01':
+            print('V')
+            label_Y_ok.config(bg="#00FF00")
+            label_Y_diff.config(bg="#550")
+            label_Y_error.config(bg="#500")
+        elif str(l)[4:6]=='11':
+            print("...")
+            label_Y_ok.config(bg="#050")
+            label_Y_diff.config(bg="#FFFF00")
+            label_Y_error.config(bg="#500")
+        elif str(l)[4:6]=='00' or str(l)[4:6]=='10':
+            print("X")
+            label_Y_ok.config(bg="#050")
+            label_Y_diff.config(bg="#550")
+            label_Y_error.config(bg="#FF0000")
+
+        if str(l)[6]=='1':
+            label_X_0.config(bg='#48C')
+        else:
+            label_X_0.config(bg='#123')
+        if str(l)[7]=='1':
+            label_Y_0.config(bg='#48C')
+        else:
+            label_Y_0.config(bg='#123')
 
 def upd8curentpos():
     global Xcurent
@@ -23,15 +66,39 @@ def upd8curentpos():
     print('Updating current position display with text '+newtext)
     label_curentpos.config(text=newtext)
 
-def refer_button_click():
+global refer_worx
+refer_worx = False
+global thread_refer
+
+#def check_prog_limits(set_x, set_y):
+
+
+def refer_function():
+    button_refer.config(text='REFER\nWORKS...', fg='#9F0')
+    global refer_worx
     global Xcurent
     global Ycurent
     refer()
     Xcurent=0.0
     Ycurent=0.0
     upd8curentpos()
+    refer_worx=False
+    button_refer.config(text='REFER', fg='black')
+    
+def refer_button_click():
+    global thread_refer
+    global refer_worx
+    if refer_worx==False:
+        refer_worx=True
+        thread_refer = Thread(target=refer_function)
+        window.after_idle(thread_refer.start)
+    else:
+        window.after_idle(thread_refer.stop)
+        refer_worx=False
 
 def zero_wout_refer():
+    print('Going to run zero_wout_refer, emptying buffer:')
+    print('RECEIVED: '+str(grbl.read_very_eager()))
     print('\r\nSetting home position in GRBL...')
     line_set0 = 'G92 X0 Y0 Z0'
     print('setting 0 coords in Grbl - sending line '+line_set0)
@@ -42,13 +109,21 @@ def zero_wout_refer():
     upd8curentpos()
 
 def go_button_click():
+    global AllowEmigration
     global Xcurent
     global Ycurent
+    global max_x
+    global max_y
     set_x = entry_initpos_X.get()
     set_y = entry_initpos_Y.get()
+    print('Going to run go_button_click, emptying buffer:')
+    print('RECEIVED: '+str(grbl.read_very_eager()))
     if float(set_x)>max_x or float(set_y)>max_y:
-        print('Too big coordinates!')
-        return
+        if AllowEmigration==False:
+            print('Too big coordinates!')
+            return
+        else:
+            print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
     #for line in ['$X','G0 X-'+entry_initpos_X.get()+' Y-'+entry_initpos_Y.get()+' F'+entry_speed.get()]:
     for line in ['$X','G0 X-'+set_x+' Y-'+set_y]:
         print('sending line '+line)
@@ -65,6 +140,11 @@ def go_button_click():
 def jog(jog_dir):
     global Xcurent
     global Ycurent
+    global max_x
+    global max_y
+    global AllowEmigration
+    print('Going to run jog, emptying buffer:')
+    print('RECEIVED: '+str(grbl.read_very_eager()))
     print('Jog '+jog_dir+' button pressed')
     jog_step=10
     jog_speed=1000
@@ -86,8 +166,11 @@ def jog(jog_dir):
         print('Error: Undefined direction for jog command!')
         return
     if x_new<0 or x_new>max_x or y_new<0 or y_new>max_y:
-        print('Cant jog - coords limit would be exceeded')
-        return
+        if AllowEmigration==False:
+            print('Cant jog - coords limit would be exceeded')
+            return
+        else:
+            print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
     
     print('sending line '+line)
     grbl.write(line.encode('utf-8') + b'\n')
@@ -101,28 +184,54 @@ def scan():
     go_button_click()
     global Xcurent
     global Ycurent
-    for scanline in range(int(entry_lines_nr.get())):
+    global max_x
+    global max_y
+    global AllowEmigration
+
+    lines_nr = int(entry_lines_nr.get())
+    X_points = int(entry_X_points.get())
+    X_points_distance = int(entry_X_points_distance.get())
+    lines_dist= int(entry_lines_dist.get())
+    #TODO: teksty tez powinny byc wczytane zeby ktos nie zmienil w trakcie bez zatrzymywania, wgl moze byc blokada pol tekstowych
+    if  (Xcurent+X_points*X_points_distance)>max_x or (Ycurent+lines_nr*lines_dist)>max_y:
+        #JEDZIE W DOL
+        if AllowEmigration==False:
+            print('Cant scan - coords limit would be exceeded')
+            return
+        else:
+            print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
+    
+    for scanline in range(lines_nr):
         print('scan line '+str(scanline))
-        for scanpoint in range(int(entry_X_points.get())):
+        for scanpoint in range(X_points):
             print('- point '+str(scanpoint))
             if scanline%2==0:
                 #line='G1 X-'+entry_X_points_distance.get()+' F'+entry_speed.get()
                 line='$J=G91X-'+entry_X_points_distance.get()+'F'+entry_speed.get()
+                Xcurent = Xcurent+X_points_distance
             else:
                 #line='G1 X'+entry_X_points_distance.get()+' F'+entry_speed.get()
                 line='$J=G91X'+entry_X_points_distance.get()+'F'+entry_speed.get()
+                Xcurent = Xcurent-X_points_distance
             print('sending line '+line)
             grbl.write(line.encode('utf-8') + b'\n')
             ans=grbl.read_until(b'ok\r\n')
             print('RECEIVED: '+str(ans))
+            upd8curentpos()
         #line='G1 Y'+entry_lines_dist.get()+' F'+entry_speed.get()
         line='$J=G91Y-'+entry_lines_dist.get()+'F'+entry_speed.get()
+        Ycurent=Ycurent+int(entry_lines_dist.get())
         print('sending line '+line)
         grbl.write(line.encode('utf-8') + b'\n')
         ans=grbl.read_until(b'ok\r\n')
         print('RECEIVED: '+str(ans))
-          
-#prepare GUI
+        upd8curentpos()
+
+############################# CHECK GRBL CONFIGURATION ########################
+time.sleep(0.1)
+configrbl()
+
+############################# PREPARE GUI #####################################
 window = Tk()
 window.title("XY SCANNER")
 window.config(bg="skyblue")
@@ -216,6 +325,17 @@ frame_curentpos = Frame(window, width=200, height=500)
 frame_curentpos.grid(row=2,column=0, padx=5, pady=5)
 label_curentpos = Label(master=frame_curentpos, text="CURRENT POSITION: ", bg="blue", fg="white", font=(200))
 label_curentpos.grid(row=0, column=0, padx=5, pady=5)
+checkedAE = IntVar()
+def ToggleAE():
+    global AllowEmigration
+    if checkedAE.get()==0:
+        AllowEmigration=False
+        print('Emigration banned!')
+    elif checkedAE.get()==1:
+        AllowEmigration=True
+        print('Emigration allowed!')
+checkbox_alow_emigration = Checkbutton(master=frame_curentpos, text='Allow exceeding programmed limits', command=ToggleAE, variable=checkedAE, offvalue=False, onvalue=True)
+checkbox_alow_emigration.grid(row=1, column=0, padx=5, pady=5)
 
 ############################# FEEDBACK
 frame_feedback = Frame(window, width=200, height=200)
@@ -253,3 +373,7 @@ label_limit_switches.grid(row=4, column=0, padx=5, pady=5)
 '''
 
 '''
+watek=Thread(target=receiveArdu2)
+window.update_idletasks() #bez tego okno sie nie pojawia
+window.after_idle(watek.start)
+window.mainloop()

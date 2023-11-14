@@ -17,6 +17,22 @@ global max_x
 global max_y
 max_x = 385
 max_y = 405
+global AllowEmigration #allow for exceeding programmed limits
+AllowEmigration = False
+
+global Xcurent
+global Ycurent
+Xcurent=0.0
+Ycurent=0.0
+
+global stopflag #set when user presses stop button,
+#refer/scan threads check it in loop,
+#if set they reset it and return
+stopflag = False
+global antistart #prevents from executing move thread when other is running
+antistart = False
+
+
 
 def exit_handler():
     print("Disconnecting...")
