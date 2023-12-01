@@ -60,6 +60,90 @@ def receiveArdu2():
         else:
             label_Y_0.config(bg='#123')
 
+        global pilot_buttons
+        pilot_buttons = str(l)[9]
+        #print('Pilot buttons state: '+pilot_buttons)
+
+def jog_pilot():
+    print('Thread using pilot buttons started')
+    global pilot_buttons
+    pilot_buttons_prev = pilot_buttons
+    speed_min = 100
+    jog_speed = speed_min
+    speed_max = 1000
+    acc = 50
+    jog_step = 1
+    global Xcurent
+    global Ycurent
+    global max_x
+    global max_y
+    global AllowEmigration
+
+    while True:
+        if pilot_buttons != 'F':#0b1111
+            line = ''
+            x_new = Xcurent
+            y_new = Ycurent
+            if pilot_buttons == '7':#0b0111up
+                y_new = y_new-jog_step
+                line='$J=G91'+'Y'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == '3':#0b0011up-right
+                y_new = y_new-jog_step
+                x_new = x_new + jog_step
+                line='$J=G91'+'X-'+str(jog_step)+'Y'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == 'B':#0b1011right
+                x_new = x_new + jog_step
+                line='$J=G91'+'X-'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == '9':#0b1001right-down
+                x_new = x_new + jog_step
+                y_new = y_new+jog_step
+                line='$J=G91'+'X-'+str(jog_step)+'Y-'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == 'D':#0b1101down
+                y_new = y_new+jog_step
+                line='$J=G91'+'Y-'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == 'C':#0b1100down-left
+                y_new = y_new+jog_step
+                x_new = x_new - jog_step
+                line='$J=G91'+'X'+str(jog_step)+'Y-'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == 'E':#0b1110left
+                x_new = x_new - jog_step
+                line='$J=G91'+'X'+str(jog_step)+'F'+str(jog_speed)
+            elif pilot_buttons == '6':#0b0110left-up
+                x_new = x_new - jog_step
+                y_new = y_new-jog_step
+                line='$J=G91'+'X'+str(jog_step)+'Y'+str(jog_step)+'F'+str(jog_speed)
+            else:
+                print('ERROR: Opposite directions chosen on pilot buttons!')
+                time.sleep(0.5)
+            #check if won't exceed programmed limits:
+            #if ((x_new>0 and x_new<max_x and y_new>0 and y_new<max_y) or AllowEmigration==True) and line!='':
+            if (x_new>0 and x_new<max_x and y_new>0 and y_new<max_y) or AllowEmigration==True:
+                if x_new<0 or x_new>max_x or y_new<0 and y_new>max_y:
+                    print('WARNING! Going to move beyond programmed limits!')
+                #SEND COMMAND:
+                print('Going to run jog, emptying buffer:')
+                print('RECEIVED: '+str(grbl.read_very_eager()))
+                print('sending line '+line)
+                grbl.write(line.encode('utf-8') + b'\n')
+                ans=grbl.read_until(b'ok\r\n')
+                print('RECEIVED: '+str(ans))
+                ans=grbl.read_until(b'ok\r\n', timeout=1)
+                print('RECEIVED: '+str(ans))
+                Xcurent = x_new
+                Ycurent = y_new
+                upd8curentpos()
+            else:
+                print('Cant jog - would exceed programmed limits')
+        else:
+            time.sleep(0.1)#otherwise thread takes too much power - indicators change with delay
+        '''
+        if pilot_buttons_prev != pilot_buttons:
+            print('Pilot buttons state: '+pilot_buttons)
+            pilot_buttons_prev = pilot_buttons
+        '''
+
+        
+
 def upd8curentpos():
     global Xcurent
     global Ycurent
@@ -414,6 +498,8 @@ label_limit_switches.grid(row=4, column=0, padx=5, pady=5)
 
 '''
 watek=Thread(target=receiveArdu2)
+watek2=Thread(target=jog_pilot)
 window.update_idletasks() #bez tego okno sie nie pojawia
 window.after_idle(watek.start)
+window.after_idle(watek2.start)
 window.mainloop()

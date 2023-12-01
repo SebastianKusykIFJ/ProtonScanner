@@ -32,7 +32,8 @@ stopflag = False
 global antistart #prevents from executing move thread when other is running
 antistart = False
 
-
+global pilot_buttons
+pilot_buttons = 'F'
 
 def exit_handler():
     print("Disconnecting...")
