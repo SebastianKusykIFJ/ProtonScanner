@@ -18,35 +18,35 @@ def receiveArdu2():
     print("THREAD RECEIVING FEEDBACK DATA STARTED")
     while True:
         l=tn2.read_until(b'\n')
-        print('odebrano od Arduino 2:'+str(l))
+        #print('odebrano od Arduino 2:'+str(l))
         if str(l)[2:4]=='01':
-            print('V')
+            #print('V')
             label_X_ok.config(bg="#00FF00")
             label_X_diff.config(bg="#550")
             label_X_error.config(bg="#500")
         elif str(l)[2:4]=='11':
-            print("...")
+            #print("...")
             label_X_ok.config(bg="#050")
             label_X_diff.config(bg="#FFFF00")
             label_X_error.config(bg="#500")
         elif str(l)[2:4]=='00' or str(l)[2:4]=='10':
-            print("X")
+            #print("X")
             label_X_ok.config(bg="#050")
             label_X_diff.config(bg="#550")
             label_X_error.config(bg="#FF0000")
         
         if str(l)[4:6]=='01':
-            print('V')
+            #print('V')
             label_Y_ok.config(bg="#00FF00")
             label_Y_diff.config(bg="#550")
             label_Y_error.config(bg="#500")
         elif str(l)[4:6]=='11':
-            print("...")
+            #print("...")
             label_Y_ok.config(bg="#050")
             label_Y_diff.config(bg="#FFFF00")
             label_Y_error.config(bg="#500")
         elif str(l)[4:6]=='00' or str(l)[4:6]=='10':
-            print("X")
+            #print("X")
             label_Y_ok.config(bg="#050")
             label_Y_diff.config(bg="#550")
             label_Y_error.config(bg="#FF0000")
@@ -68,11 +68,16 @@ def jog_pilot():
     print('Thread using pilot buttons started')
     global pilot_buttons
     pilot_buttons_prev = pilot_buttons
+
     speed_min = 100
     jog_speed = speed_min
     speed_max = 1000
     acc = 50
-    jog_step = 1
+    step_min = 1
+    jog_step = step_min
+    step_max = 10
+    step_incr = 1
+
     global Xcurent
     global Ycurent
     global max_x
@@ -80,35 +85,42 @@ def jog_pilot():
     global AllowEmigration
 
     while True:
-        if pilot_buttons != 'F':#0b1111
+        #set speed to minimum if direction changed:
+        if (pilot_buttons != pilot_buttons_prev):
+            jog_speed = speed_min
+            jog_step = step_min
+            pilot_buttons_prev = pilot_buttons
+        #now pilot_buttons_prev contains the current value - I will use it to prevent changes during loop turn
+        if pilot_buttons_prev != 'F':#0b1111
+            #print('Current parameters: speed '+str(jog_speed)+', step '+str(jog_step))
             line = ''
             x_new = Xcurent
             y_new = Ycurent
-            if pilot_buttons == '7':#0b0111up
+            if pilot_buttons_prev == '7':#0b0111up
                 y_new = y_new-jog_step
                 line='$J=G91'+'Y'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == '3':#0b0011up-right
+            elif pilot_buttons_prev == '3':#0b0011up-right
                 y_new = y_new-jog_step
                 x_new = x_new + jog_step
                 line='$J=G91'+'X-'+str(jog_step)+'Y'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == 'B':#0b1011right
+            elif pilot_buttons_prev == 'B':#0b1011right
                 x_new = x_new + jog_step
                 line='$J=G91'+'X-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == '9':#0b1001right-down
+            elif pilot_buttons_prev == '9':#0b1001right-down
                 x_new = x_new + jog_step
                 y_new = y_new+jog_step
                 line='$J=G91'+'X-'+str(jog_step)+'Y-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == 'D':#0b1101down
+            elif pilot_buttons_prev == 'D':#0b1101down
                 y_new = y_new+jog_step
                 line='$J=G91'+'Y-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == 'C':#0b1100down-left
+            elif pilot_buttons_prev == 'C':#0b1100down-left
                 y_new = y_new+jog_step
                 x_new = x_new - jog_step
                 line='$J=G91'+'X'+str(jog_step)+'Y-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == 'E':#0b1110left
+            elif pilot_buttons_prev == 'E':#0b1110left
                 x_new = x_new - jog_step
                 line='$J=G91'+'X'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons == '6':#0b0110left-up
+            elif pilot_buttons_prev == '6':#0b0110left-up
                 x_new = x_new - jog_step
                 y_new = y_new-jog_step
                 line='$J=G91'+'X'+str(jog_step)+'Y'+str(jog_step)+'F'+str(jog_speed)
@@ -117,24 +129,31 @@ def jog_pilot():
                 time.sleep(0.5)
             #check if won't exceed programmed limits:
             #if ((x_new>0 and x_new<max_x and y_new>0 and y_new<max_y) or AllowEmigration==True) and line!='':
-            if (x_new>0 and x_new<max_x and y_new>0 and y_new<max_y) or AllowEmigration==True:
-                if x_new<0 or x_new>max_x or y_new<0 and y_new>max_y:
+            if (x_new>=0 and x_new<=max_x and y_new>=0 and y_new<=max_y) or AllowEmigration==True:
+                if x_new<=0 or x_new>=max_x or y_new<=0 and y_new>=max_y:
                     print('WARNING! Going to move beyond programmed limits!')
                 #SEND COMMAND:
                 print('Going to run jog, emptying buffer:')
                 print('RECEIVED: '+str(grbl.read_very_eager()))
                 print('sending line '+line)
                 grbl.write(line.encode('utf-8') + b'\n')
-                ans=grbl.read_until(b'ok\r\n')
+                ans=grbl.read_until(b'ok\r\n', timeout=1)
                 print('RECEIVED: '+str(ans))
                 ans=grbl.read_until(b'ok\r\n', timeout=1)
                 print('RECEIVED: '+str(ans))
                 Xcurent = x_new
                 Ycurent = y_new
                 upd8curentpos()
+                #accelerate:
+                if jog_speed<speed_max:
+                    jog_speed = jog_speed + acc
+                if jog_step<step_max:
+                    jog_step = jog_step + step_incr
             else:
                 print('Cant jog - would exceed programmed limits')
         else:
+            jog_speed = speed_min
+            jog_step = step_min
             time.sleep(0.1)#otherwise thread takes too much power - indicators change with delay
         '''
         if pilot_buttons_prev != pilot_buttons:
