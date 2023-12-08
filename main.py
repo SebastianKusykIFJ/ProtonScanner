@@ -12,7 +12,8 @@ import time
 from threading import Thread
 
 settings.init()
-resetGrbl()
+if offline==False:
+    resetGrbl()
 
 def receiveArdu2():
     print("THREAD RECEIVING FEEDBACK DATA STARTED")
@@ -161,8 +162,6 @@ def jog_pilot():
             pilot_buttons_prev = pilot_buttons
         '''
 
-        
-
 def upd8curentpos():
     global Xcurent
     global Ycurent
@@ -179,10 +178,6 @@ global thread_go
 global scan_worx
 scan_worx = False
 global thread_scan
-
-
-#def check_prog_limits(set_x, set_y):
-
 
 def refer_function():
     button_refer.config(text='REFER\nWORKS...', fg='#9F0')
@@ -324,14 +319,20 @@ def scan_function():
     X_points_distance = int(entry_X_points_distance.get())
     lines_dist= int(entry_lines_dist.get())
     #TODO: teksty tez powinny byc wczytane zeby ktos nie zmienil w trakcie bez zatrzymywania, wgl moze byc blokada pol tekstowych
-    if  (Xcurent+X_points*X_points_distance)>max_x or (Ycurent+lines_nr*lines_dist)>max_y:
+    if (Xcurent+X_points*X_points_distance)>max_x or (Ycurent+lines_nr*lines_dist)>max_y:
         #JEDZIE W DOL
         if AllowEmigration==False:
             print('Cant scan - coords limit would be exceeded')
             return
         else:
             print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
-    
+    line = '$X'
+    print('sending line '+line)
+    grbl.write(line.encode('utf-8') + b'\n')
+    ans=grbl.read_until(b'ok\r\n')
+    print('RECEIVED: '+str(ans))
+    print('GOING TO RUN SCAN, EMPTYING BUFFER\nRECEIVED:'+str(grbl.read_very_eager()))
+
     for scanline in range(lines_nr):
         print('scan line '+str(scanline))
         for scanpoint in range(X_points):
@@ -348,6 +349,15 @@ def scan_function():
             grbl.write(line.encode('utf-8') + b'\n')
             ans=grbl.read_until(b'ok\r\n')
             print('RECEIVED: '+str(ans))
+            '''
+            line='?'
+            print('sending line: '+line)
+            grbl.write(line.encode('utf-8')+b'\n')
+            ans=grbl.read_all()
+            print('RECEIVED: '+str(ans))
+            '''
+            #ans=grbl.read_until(b'ok\r\n')
+            #print('RECEIVED: '+str(ans))
             upd8curentpos()
         #line='G1 Y'+entry_lines_dist.get()+' F'+entry_speed.get()
         line='$J=G91Y-'+entry_lines_dist.get()+'F'+entry_speed.get()
@@ -371,8 +381,9 @@ def scan_button_click():
         scan_worx=False
 
 ############################# CHECK GRBL CONFIGURATION ########################
-time.sleep(0.1)
-configrbl()
+if offline==False:
+    time.sleep(0.1)
+    configrbl()
 
 ############################# PREPARE GUI #####################################
 window = Tk()
@@ -513,12 +524,58 @@ label_Y_0.grid(row=3, column=4, padx=5, pady=5)
 ################ LIMIT SWITCHES
 label_limit_switches = Label(master=frame_feedback, text='LIMIT SWITCHES:')
 label_limit_switches.grid(row=4, column=0, padx=5, pady=5)
+
+################################## UNIDOS #########################################################
+frame_unidos = Frame(window, width=200, height=200)
+frame_unidos.grid(row=1, column=2, padx=5, pady=5)
+label_unidos = Label(master=frame_unidos, text="UNIDOS")
+label_unidos.grid(row=0, column=0, padx=5, pady=5)
+button_unidos1 = Button(master=frame_unidos, text='U1', height=2, width=2, bg='green')
+button_unidos1.grid(row=1, column=0, padx=5, pady=5)
+button_unidos2 = Button(master=frame_unidos, text='U2', height=2, width=2, bg='green')
+button_unidos2.grid(row=1, column=1, padx=5, pady=5)
+button_unidos2 = Button(master=frame_unidos, text='U1+2', height=2, width=2, bg='green')
+button_unidos2.grid(row=1, column=2, padx=5, pady=5)
+button_unidosOFF = Button(master=frame_unidos, text='OFF', height=2, width=2, bg='blue')
+button_unidosOFF.grid(row=1, column=3, padx=5, pady=5)
+label_unidos_filename = Label(master=frame_unidos, text="FILE: ")
+label_unidos_filename.grid(row=2, column=0, padx=5, pady=5)
+entry_unidos_filename = Entry(master=frame_unidos)
+entry_unidos_filename.grid(row=2, column=1, padx=5, pady=5)
+
+button_unidos_start = Button(master=frame_unidos, text='START')
+button_unidos_start.grid(row=3, column=0, padx=5, pady=5)
+button_unidos_stop = Button(master=frame_unidos, text='STOP')
+button_unidos_stop.grid(row=3, column=1, padx=5, pady=5)
+button_unidos_reset = Button(master=frame_unidos, text='RESET')
+button_unidos_reset.grid(row=3, column=2, padx=5, pady=5)
+button_unidos_null = Button(master=frame_unidos, text='NULL')
+button_unidos_null.grid(row=3, column=3, padx=5, pady=5)
+button_unidos_low = Button(master=frame_unidos, text='LOW')
+button_unidos_low.grid(row=3, column=4, padx=5, pady=5)
+button_unidos_med = Button(master=frame_unidos, text='MED')
+button_unidos_med.grid(row=3, column=5, padx=5, pady=5)
+button_unidos_hi = Button(master=frame_unidos, text='HIII')
+button_unidos_hi.grid(row=3, column=6, padx=5, pady=5)
+
+button_unidos_collect = Button(master=frame_unidos, text='COLLECT DATA')
+button_unidos_collect.grid(row=4, column=0, padx=5, pady=5)
+button_unidos_pause = Button(master=frame_unidos, text='PAUSE')
+button_unidos_pause.grid(row=4, column=1, padx=5, pady=5)
+button_unidos_end = Button(master=frame_unidos, text='END')
+button_unidos_end.grid(row=4, column=2, padx=5, pady=5)
+
+label_unidos_read1 = Label(master=frame_unidos, text='U1: ')
+label_unidos_read1.grid(row=5, column=0, padx=5, pady=5)
+label_unidos_read2 = Label(master=frame_unidos, text='U2: ')
+label_unidos_read2.grid(row=6, column=0, padx=5, pady=5)
 '''
 
 '''
 watek=Thread(target=receiveArdu2)
 watek2=Thread(target=jog_pilot)
 window.update_idletasks() #bez tego okno sie nie pojawia
-window.after_idle(watek.start)
-window.after_idle(watek2.start)
+if offline==False:
+    window.after_idle(watek.start)
+    window.after_idle(watek2.start)
 window.mainloop()

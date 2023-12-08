@@ -1,6 +1,8 @@
 import telnetlib
 import atexit
 
+offline = False
+
 ############ PORT
 global ip
 ip="169.254.1.200"
@@ -10,8 +12,9 @@ port1=2000
 port2=3000
 global grbl
 global tn2
-grbl=telnetlib.Telnet(ip, port1)
-tn2=telnetlib.Telnet(ip, port2)
+if offline==False:
+    grbl=telnetlib.Telnet(ip, port1)
+    tn2=telnetlib.Telnet(ip, port2)
 
 global max_x
 global max_y
@@ -39,7 +42,8 @@ def exit_handler():
     print("Disconnecting...")
     grbl.close()
     tn2.close()
-atexit.register(exit_handler)
+if offline==False:
+    atexit.register(exit_handler)
 
 
 def init():
