@@ -180,7 +180,8 @@ global scan_worx
 scan_worx = False
 global thread_scan
 global ScanWithUnidos
-ScanWithUnidos=False
+ScanWithUnidos1=False
+ScanWithUnidos2=False
 
 def refer_function():
     button_refer.config(text='REFER\nWORKS...', fg='#9F0')
@@ -308,7 +309,8 @@ def jog(jog_dir):
     upd8curentpos()
 
 def scan_function():
-    global ScanWithUnidos
+    global ScanWithUnidos1
+    global ScanWithUnidos2
 
     global scan_worx
     scan_worx = True
@@ -338,10 +340,15 @@ def scan_function():
     ans=grbl.read_until(b'ok\r\n')
     print('RECEIVED: '+str(ans))
     print('GOING TO RUN SCAN, EMPTYING BUFFER\nRECEIVED:'+str(grbl.read_very_eager()))
-    if ScanWithUnidos:
-        print('Resetting Unidos...')
+    if ScanWithUnidos1:
+        print('Resetting Unidos1...')
+        print(u_reset(u_port1))
+        print('Starting Unidos1...')
+        print(u_start(u_port1))
+    if ScanWithUnidos2:
+        print('Resetting Unidos2...')
         print(u_reset(u_port2))
-        print('Starting Unidos...')
+        print('Starting Unidos2...')
         print(u_start(u_port2))
 
     for scanline in range(lines_nr):
@@ -361,7 +368,7 @@ def scan_function():
             ans=grbl.read_until(b'ok\r\n')
             print('RECEIVED: '+str(ans))
 
-            if ScanWithUnidos:
+            if ScanWithUnidos1 or ScanWithUnidos2 or float(entry_haltime.get())>0:
                 while True:
                     line='?'
                     print('sending line: '+line)
@@ -371,8 +378,12 @@ def scan_function():
                     if str(ans).find('<Idle|')!=-1:
                         break
                     time.sleep(0.5)
-                print('Reading Unidos value...')
-                print(u_meas(u_port2))
+                if ScanWithUnidos1:
+                    print('Reading Unidos1 value...')
+                    print(u_meas(u_port1))
+                if ScanWithUnidos2:
+                    print('Reading Unidos2 value...')
+                    print(u_meas(u_port2))
                 time.sleep(float(entry_haltime.get()))
             
             '''if halt>0:
@@ -392,10 +403,15 @@ def scan_function():
         ans=grbl.read_until(b'ok\r\n')
         print('RECEIVED: '+str(ans))
         upd8curentpos()
-    if ScanWithUnidos:
-        print('Holding Unidos...')
+    if ScanWithUnidos1:
+        print('Holding Unidos1...')
+        print(u_hold(u_port1))
+        print('Disconnecting Unidos1...')
+        print(u_close(u_port1))
+    if ScanWithUnidos2:
+        print('Holding Unidos2...')
         print(u_hold(u_port2))
-        print('Disconnecting Unidos...')
+        print('Disconnecting Unidos2...')
         print(u_close(u_port2))
     scan_worx = False
     button_start.config(text='START')
@@ -485,15 +501,24 @@ label_speed.grid(row=6, column=0, padx=5, pady=5)
 entry_speed = Entry(master=frame_move_params)
 entry_speed.grid(row=6, column=1, padx=5, pady=5)
 #scan with Unidos
-checkedSwU = IntVar()
-def ToggleSwU():
-    global ScanWithUnidos
-    if checkedSwU.get()==0:
-        ScanWithUnidos=False
-    elif checkedSwU.get()==1:
-        ScanWithUnidos=True
-checkbox_scan_with_unidos = Checkbutton(master= frame_move_params, text='Scan with Unidos', command=ToggleSwU, variable=checkedSwU, offvalue=False, onvalue=True)
-checkbox_scan_with_unidos.grid(row=7, column=0, padx=5, pady=5)
+checkedSwU1 = IntVar()
+checkedSwU2 = IntVar()
+def ToggleSwU1():
+    global ScanWithUnidos1
+    if checkedSwU1.get()==0:
+        ScanWithUnidos1=False
+    elif checkedSwU1.get()==1:
+        ScanWithUnidos1=True
+def ToggleSwU2():
+    global ScanWithUnidos2
+    if checkedSwU2.get()==0:
+        ScanWithUnidos2=False
+    elif checkedSwU2.get()==1:
+        ScanWithUnidos2=True
+checkbox_scan_with_unidos1 = Checkbutton(master= frame_move_params, text='Scan with Unidos1', command=ToggleSwU1, variable=checkedSwU1, offvalue=False, onvalue=True)
+checkbox_scan_with_unidos1.grid(row=7, column=0, padx=5, pady=5)
+checkbox_scan_with_unidos2 = Checkbutton(master= frame_move_params, text='Scan with Unidos2', command=ToggleSwU2, variable=checkedSwU2, offvalue=False, onvalue=True)
+checkbox_scan_with_unidos2.grid(row=7, column=1, padx=5, pady=5)
 
 #buttons
 button_start = Button(master=frame_move_params, text="START", height = 3, width=10, bg='green', fg='black', font=(100), command=scan_button_click)
