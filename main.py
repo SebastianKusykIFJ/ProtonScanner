@@ -10,6 +10,7 @@ from tkinter import *
 from tkinter import ttk
 import time
 from threading import Thread
+from unidos import *
 
 settings.init()
 if offline==False:
@@ -178,6 +179,8 @@ global thread_go
 global scan_worx
 scan_worx = False
 global thread_scan
+global ScanWithUnidos
+ScanWithUnidos=False
 
 def refer_function():
     button_refer.config(text='REFER\nWORKS...', fg='#9F0')
@@ -305,6 +308,8 @@ def jog(jog_dir):
     upd8curentpos()
 
 def scan_function():
+    global ScanWithUnidos
+
     global scan_worx
     scan_worx = True
     button_start.config(text='SCAN\nWORKS...')
@@ -318,6 +323,7 @@ def scan_function():
     X_points = int(entry_X_points.get())
     X_points_distance = int(entry_X_points_distance.get())
     lines_dist= int(entry_lines_dist.get())
+    halt = float(entry_haltime.get())
     #TODO: teksty tez powinny byc wczytane zeby ktos nie zmienil w trakcie bez zatrzymywania, wgl moze byc blokada pol tekstowych
     if (Xcurent+X_points*X_points_distance)>max_x or (Ycurent+lines_nr*lines_dist)>max_y:
         #JEDZIE W DOL
@@ -332,6 +338,11 @@ def scan_function():
     ans=grbl.read_until(b'ok\r\n')
     print('RECEIVED: '+str(ans))
     print('GOING TO RUN SCAN, EMPTYING BUFFER\nRECEIVED:'+str(grbl.read_very_eager()))
+    if ScanWithUnidos:
+        print('Resetting Unidos...')
+        print(u_reset(u_port2))
+        print('Starting Unidos...')
+        print(u_start(u_port2))
 
     for scanline in range(lines_nr):
         print('scan line '+str(scanline))
@@ -349,13 +360,27 @@ def scan_function():
             grbl.write(line.encode('utf-8') + b'\n')
             ans=grbl.read_until(b'ok\r\n')
             print('RECEIVED: '+str(ans))
-            '''
-            line='?'
-            print('sending line: '+line)
-            grbl.write(line.encode('utf-8')+b'\n')
-            ans=grbl.read_all()
-            print('RECEIVED: '+str(ans))
-            '''
+
+            if ScanWithUnidos:
+                while True:
+                    line='?'
+                    print('sending line: '+line)
+                    grbl.write(line.encode('utf-8'))
+                    ans=grbl.read_until(b'\r\n')
+                    print('RECEIVED: '+str(ans))
+                    if str(ans).find('<Idle|')!=-1:
+                        break
+                    time.sleep(0.5)
+                print('Reading Unidos value...')
+                print(u_meas(u_port2))
+                time.sleep(float(entry_haltime.get()))
+            
+            '''if halt>0:
+                line = 'G4 P'+entry_haltime.get()
+                print('sending line: '+line)
+                grbl.write(line.encode('utf-8')+b'\n')
+                ans=grbl.read_until(b'\r\n')
+                print('RECEIVED: '+str(ans))'''
             #ans=grbl.read_until(b'ok\r\n')
             #print('RECEIVED: '+str(ans))
             upd8curentpos()
@@ -367,6 +392,11 @@ def scan_function():
         ans=grbl.read_until(b'ok\r\n')
         print('RECEIVED: '+str(ans))
         upd8curentpos()
+    if ScanWithUnidos:
+        print('Holding Unidos...')
+        print(u_hold(u_port2))
+        print('Disconnecting Unidos...')
+        print(u_close(u_port2))
     scan_worx = False
     button_start.config(text='START')
 
@@ -454,13 +484,24 @@ label_speed = Label(master=frame_move_params, text="SPEED")
 label_speed.grid(row=6, column=0, padx=5, pady=5)
 entry_speed = Entry(master=frame_move_params)
 entry_speed.grid(row=6, column=1, padx=5, pady=5)
+#scan with Unidos
+checkedSwU = IntVar()
+def ToggleSwU():
+    global ScanWithUnidos
+    if checkedSwU.get()==0:
+        ScanWithUnidos=False
+    elif checkedSwU.get()==1:
+        ScanWithUnidos=True
+checkbox_scan_with_unidos = Checkbutton(master= frame_move_params, text='Scan with Unidos', command=ToggleSwU, variable=checkedSwU, offvalue=False, onvalue=True)
+checkbox_scan_with_unidos.grid(row=7, column=0, padx=5, pady=5)
+
 #buttons
 button_start = Button(master=frame_move_params, text="START", height = 3, width=10, bg='green', fg='black', font=(100), command=scan_button_click)
-button_start.grid(row=7, column=0, padx=5, pady=5)
+button_start.grid(row=8, column=0, padx=5, pady=5)
 button_pause= Button(master=frame_move_params, text="PAUSE", height = 3, width=10, bg='orange', fg='black', font=(100))
-button_pause.grid(row=7, column=1, padx=5, pady=5)
+button_pause.grid(row=8, column=1, padx=5, pady=5)
 button_stop= Button(master=frame_move_params, text="STOP", height = 3, width=10, bg='red', fg='black', font=(100))
-button_stop.grid(row=7, column=2, padx=5, pady=5)
+button_stop.grid(row=8, column=2, padx=5, pady=5)
 
 ############################## JOG BUTTONS
 frame_jog = Frame(window, width=200, height=200)

@@ -2,8 +2,12 @@ import telnetlib
 import atexit
 
 offline = False
-
-############ PORT
+############ PORT - UNIDOS
+global u_port1
+global u_port2
+u_port1 = '\\.\COM3'
+u_port2 = '\\.\COM4'
+############ PORT - SCANNER
 global ip
 ip="169.254.1.200"
 global port1 #main Arduino, running GRBL
