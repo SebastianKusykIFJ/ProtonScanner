@@ -23,12 +23,22 @@ def refer():
         stopflag=False
         return
     #input('Press enter to start encoder homing')
-    for i in range(60,1,-1):
+
+    '''for i in range(60,1,-1):
         print('Encoder homing starts in '+str(i))
+        grbl.write(b'?')
         time.sleep(1)
+        print(str(grbl.read_until(b'\r\n', timeout=0.1)))
         if stopflag:
             stopflag=False
-            return
+            return'''
+    while True:
+        grbl.write(b'?')
+        ans = grbl.read_until(b'\r\n', timeout=1)
+        print('RECEIVED:'+str(ans))
+        if str(ans).find('<Idle|')!=-1:
+            break
+
         
     #going to encoder 0:
     for axis in ['x','y']:
