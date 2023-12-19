@@ -350,11 +350,13 @@ def scan_function():
         print(u_reset(u_port2))
         print('Starting Unidos2...')
         print(u_start(u_port2))
+    file = open('log.txt','a')
 
     for scanline in range(lines_nr):
         print('scan line '+str(scanline))
         for scanpoint in range(X_points):
             print('- point '+str(scanpoint))
+            file.write('Line '+str(scanline)+', point '+str(scanpoint))
             if scanline%2==0:
                 #line='G1 X-'+entry_X_points_distance.get()+' F'+entry_speed.get()
                 line='$J=G91X-'+entry_X_points_distance.get()+'F'+entry_speed.get()
@@ -376,14 +378,20 @@ def scan_function():
                     ans=grbl.read_until(b'\r\n')
                     print('RECEIVED: '+str(ans))
                     if str(ans).find('<Idle|')!=-1:
+                        file.write(str(ans))
                         break
-                    time.sleep(0.5)
+                    else:
+                        time.sleep(0.5)
                 if ScanWithUnidos1:
                     print('Reading Unidos1 value...')
-                    print(u_meas(u_port1))
+                    u1_ans = u_meas(u_port1)
+                    print(u1_ans)
+                    file.write(u1_ans)
                 if ScanWithUnidos2:
                     print('Reading Unidos2 value...')
-                    print(u_meas(u_port2))
+                    u2_ans = u_meas(u_port2)
+                    print(u2_ans)
+                    file.write(u2_ans)
                 time.sleep(float(entry_haltime.get()))
             
             '''if halt>0:
@@ -413,6 +421,7 @@ def scan_function():
         print(u_hold(u_port2))
         print('Disconnecting Unidos2...')
         print(u_close(u_port2))
+    file.close()
     scan_worx = False
     button_start.config(text='START')
 
