@@ -356,7 +356,7 @@ def scan_function():
         print('scan line '+str(scanline))
         for scanpoint in range(X_points):
             print('- point '+str(scanpoint))
-            file.write('Line '+str(scanline)+', point '+str(scanpoint))
+            file.write('\r\nLine '+str(scanline)+', point '+str(scanpoint))
             if scanline%2==0:
                 #line='G1 X-'+entry_X_points_distance.get()+' F'+entry_speed.get()
                 line='$J=G91X-'+entry_X_points_distance.get()+'F'+entry_speed.get()
@@ -378,7 +378,7 @@ def scan_function():
                     ans=grbl.read_until(b'\r\n')
                     print('RECEIVED: '+str(ans))
                     if str(ans).find('<Idle|')!=-1:
-                        file.write(str(ans))
+                        file.write(' '+str(ans)+' ')
                         break
                     else:
                         time.sleep(0.5)
