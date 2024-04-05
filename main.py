@@ -98,31 +98,38 @@ def jog_pilot():
             line = ''
             x_new = Xcurent
             y_new = Ycurent
-            if pilot_buttons_prev == '7':#0b0111up
+            #if pilot_buttons_prev == '7':#0b0111up
+            if pilot_buttons_prev == 'B':#0b1011up
                 y_new = y_new-jog_step
                 line='$J=G91'+'Y'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == '3':#0b0011up-right
+            #elif pilot_buttons_prev == '3':#0b0011up-right
+            elif pilot_buttons_prev == 'A':#0b1010up-right
                 y_new = y_new-jog_step
                 x_new = x_new + jog_step
                 line='$J=G91'+'X-'+str(jog_step)+'Y'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == 'B':#0b1011right
+            #elif pilot_buttons_prev == 'B':#0b1011right
+            elif pilot_buttons_prev == 'E':#0b1110right
                 x_new = x_new + jog_step
                 line='$J=G91'+'X-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == '9':#0b1001right-down
+            #elif pilot_buttons_prev == '9':#0b1001right-down
+            elif pilot_buttons_prev == '6':#0b0110right-down
                 x_new = x_new + jog_step
                 y_new = y_new+jog_step
                 line='$J=G91'+'X-'+str(jog_step)+'Y-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == 'D':#0b1101down
+            #elif pilot_buttons_prev == 'D':#0b1101down
+            elif pilot_buttons_prev == '7':#0b0111down
                 y_new = y_new+jog_step
                 line='$J=G91'+'Y-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == 'C':#0b1100down-left
+            #elif pilot_buttons_prev == 'C':#0b1100down-left
+            elif pilot_buttons_prev == '5':#0b0101down-left
                 y_new = y_new+jog_step
                 x_new = x_new - jog_step
                 line='$J=G91'+'X'+str(jog_step)+'Y-'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == 'E':#0b1110left
+            #elif pilot_buttons_prev == 'E':#0b1110left
+            elif pilot_buttons_prev == 'D':#0b1101left
                 x_new = x_new - jog_step
                 line='$J=G91'+'X'+str(jog_step)+'F'+str(jog_speed)
-            elif pilot_buttons_prev == '6':#0b0110left-up
+            elif pilot_buttons_prev == '9':#0b1001left-up
                 x_new = x_new - jog_step
                 y_new = y_new-jog_step
                 line='$J=G91'+'X'+str(jog_step)+'Y'+str(jog_step)+'F'+str(jog_speed)
