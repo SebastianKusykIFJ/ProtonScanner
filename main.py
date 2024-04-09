@@ -94,6 +94,18 @@ def jog_pilot():
             pilot_buttons_prev = pilot_buttons
         #now pilot_buttons_prev contains the current value - I will use it to prevent changes during loop turn
         if pilot_buttons_prev != 'F':#0b1111
+            
+            print('Waiting for idle:')
+            while True:
+                line='?'
+                print('sending line: '+line)
+                grbl.write(line.encode('utf-8'))
+                ans=grbl.read_until(b'\r\n')
+                print('RECEIVED: '+str(ans))
+                if str(ans).find('<Idle|')!=-1:
+                    break
+                else:
+                    time.sleep(0.5)
             #print('Current parameters: speed '+str(jog_speed)+', step '+str(jog_step))
             line = ''
             x_new = Xcurent

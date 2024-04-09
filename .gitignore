@@ -2,3 +2,8 @@
 *.pyc
 *.pyc
 *.pyc
+*.pyc
+__pycache__/go.cpython-39.pyc
+__pycache__/refer.cpython-39.pyc
+__pycache__/settings.cpython-39.pyc
+log.txt
