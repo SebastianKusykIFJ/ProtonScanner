@@ -42,6 +42,7 @@ def refer():
 
         
     #going to encoder 0:
+    '''
     for axis in ['x','y']:
         if stopflag:
             return
@@ -71,6 +72,7 @@ def refer():
         print(ans)
         tn2.write('0'.encode('utf-8') + b'\n')
         resetGrbl()
+    '''
     #reset GRBL and set home position:
     print('\r\nSetting home position in GRBL...')
     line_set0 = 'G92 X0 Y0 Z0'

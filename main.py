@@ -100,7 +100,7 @@ def jog_pilot():
                 line='?'
                 print('SEND: '+line)
                 grbl.write(line.encode('utf-8'))
-                ans=grbl.read_until(b'\r\n')
+                ans=grbl.read_until(b'\r\n', timeout=1)
                 print('RECEIVED: '+str(ans))
                 if str(ans).find('<Idle|')!=-1:
                     break
