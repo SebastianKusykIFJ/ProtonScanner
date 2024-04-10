@@ -5,7 +5,7 @@ from resetGrbl import resetGrbl
 def configrbl():
     print('Going to run configrbl, emptying buffer:')
     print('RECEIVED: '+str(grbl.read_very_eager()))
-    print('Sending $$...')
+    print('SEND: $$')
     grbl.write('$$'.encode('utf-8')+b'\n')
     print('Waiting for answer...')
     ans = grbl.read_until(b'ok\r\n', timeout=1)

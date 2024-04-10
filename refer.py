@@ -14,7 +14,7 @@ def refer():
     if stopflag:
         stopflag=False
         return
-    print('Sending home command...')
+    print('SEND: $H')
     grbl.write('$H'.encode('utf-8')+b'\n')
     for i in range(1):
         ans = grbl.read_until(b'ok\r\n')
@@ -33,6 +33,7 @@ def refer():
             stopflag=False
             return'''
     while True:
+        print('SEND: ?')
         grbl.write(b'?')
         ans = grbl.read_until(b'\r\n', timeout=1)
         print('RECEIVED:'+str(ans))

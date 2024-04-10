@@ -98,7 +98,7 @@ def jog_pilot():
             print('Waiting for idle:')
             while True:
                 line='?'
-                print('sending line: '+line)
+                print('SEND: '+line)
                 grbl.write(line.encode('utf-8'))
                 ans=grbl.read_until(b'\r\n')
                 print('RECEIVED: '+str(ans))
@@ -156,7 +156,7 @@ def jog_pilot():
                 #SEND COMMAND:
                 print('Going to run jog, emptying buffer:')
                 print('RECEIVED: '+str(grbl.read_very_eager()))
-                print('sending line '+line)
+                print('SEND: '+line)
                 grbl.write(line.encode('utf-8') + b'\n')
                 ans=grbl.read_until(b'ok\r\n', timeout=1)
                 print('RECEIVED: '+str(ans))
@@ -230,7 +230,8 @@ def zero_wout_refer():
     print('RECEIVED: '+str(grbl.read_very_eager()))
     print('\r\nSetting home position in GRBL...')
     line_set0 = 'G92 X0 Y0 Z0'
-    print('setting 0 coords in Grbl - sending line '+line_set0)
+    print('setting 0 coords in Grbl:')
+    print('SEND: '+line_set0)
     grbl.write(line_set0.encode('utf-8') + b'\n')
     print('RECEIVED: '+str(grbl.read_until(b'ok\r\n')))
     Xcurent=0.0
@@ -319,7 +320,7 @@ def jog(jog_dir):
         else:
             print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
     
-    print('sending line '+line)
+    print('SEND: '+line)
     grbl.write(line.encode('utf-8') + b'\n')
     ans=grbl.read_until(b'ok\r\n')
     print('RECEIVED: '+str(ans))
@@ -354,7 +355,7 @@ def scan_function():
         else:
             print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
     line = '$X'
-    print('sending line '+line)
+    print('SEND: '+line)
     grbl.write(line.encode('utf-8') + b'\n')
     ans=grbl.read_until(b'ok\r\n')
     print('RECEIVED: '+str(ans))
@@ -384,7 +385,7 @@ def scan_function():
                 #line='G1 X'+entry_X_points_distance.get()+' F'+entry_speed.get()
                 line='$J=G91X'+entry_X_points_distance.get()+'F'+entry_speed.get()
                 Xcurent = Xcurent-X_points_distance
-            print('sending line '+line)
+            print('SEND: '+line)
             grbl.write(line.encode('utf-8') + b'\n')
             ans=grbl.read_until(b'ok\r\n')
             print('RECEIVED: '+str(ans))
@@ -392,7 +393,7 @@ def scan_function():
             if ScanWithUnidos1 or ScanWithUnidos2 or float(entry_haltime.get())>0:
                 while True:
                     line='?'
-                    print('sending line: '+line)
+                    print('SEND: '+line)
                     grbl.write(line.encode('utf-8'))
                     ans=grbl.read_until(b'\r\n')
                     print('RECEIVED: '+str(ans))
@@ -425,7 +426,7 @@ def scan_function():
         #line='G1 Y'+entry_lines_dist.get()+' F'+entry_speed.get()
         line='$J=G91Y-'+entry_lines_dist.get()+'F'+entry_speed.get()
         Ycurent=Ycurent+int(entry_lines_dist.get())
-        print('sending line '+line)
+        print('SEND: '+line)
         grbl.write(line.encode('utf-8') + b'\n')
         ans=grbl.read_until(b'ok\r\n')
         print('RECEIVED: '+str(ans))
