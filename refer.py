@@ -42,11 +42,12 @@ def refer():
 
         
     #going to encoder 0:
-    '''
+    
     for axis in ['x','y']:
         if stopflag:
             return
         print('\r\nGoing to encoder 0 for axis '+axis)
+       
         tn2.write(axis.encode('utf-8') + b'\n')
         #if enabling forwarding caused end-stop error, that's our 0 point for some axis
         l=grbl.read_until(b'[MSG:Reset to continue]\r\n', timeout=1)
@@ -66,13 +67,13 @@ def refer():
             stopflag=False
             tn2.write('0'.encode('utf-8') + b'\n')
             return
-        print('Sending line '+line_actual)
+        print('SEND: '+line_actual)
         grbl.write(line_actual.encode('utf-8') + b'\n')
         ans = grbl.read_until(b'[MSG:Reset to continue]\r\n', timeout=10)
         print(ans)
         tn2.write('0'.encode('utf-8') + b'\n')
         resetGrbl()
-    '''
+   
     #reset GRBL and set home position:
     print('\r\nSetting home position in GRBL...')
     line_set0 = 'G92 X0 Y0 Z0'
