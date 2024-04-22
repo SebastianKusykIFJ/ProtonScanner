@@ -53,6 +53,7 @@ if offline==False:
 def init():
     print('Init...')
 
-
-
+#####LAST ANSWER FROM ARDUINO2 - WRITTEN HERE FROM THREAD, READ BY REFER FUNCTION
+global tn2_last_ans
+tn2_last_ans = '--------'
 

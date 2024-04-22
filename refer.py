@@ -42,12 +42,13 @@ def refer():
 
         
     #going to encoder 0:
-    
+    global tn2_last_ans
     for axis in ['x','y']:
         if stopflag:
             return
         print('\r\nGoing to encoder 0 for axis '+axis)
-       
+        print('Last Arduino2 answer: '+tn2_last_ans)
+
         tn2.write(axis.encode('utf-8') + b'\n')
         #if enabling forwarding caused end-stop error, that's our 0 point for some axis
         l=grbl.read_until(b'[MSG:Reset to continue]\r\n', timeout=1)

@@ -17,9 +17,11 @@ if offline==False:
     resetGrbl()
 
 def receiveArdu2():
+    global tn2_last_ans
     print("THREAD RECEIVING FEEDBACK DATA STARTED")
     while True:
         l=tn2.read_until(b'\n')
+        tn2_last_ans = l
         #print('odebrano od Arduino 2:'+str(l))
         if str(l)[2:4]=='01':
             #print('V')
