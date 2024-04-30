@@ -375,8 +375,12 @@ def scan_function():
     file = open('log.txt','a')
 
     for scanline in range(lines_nr):
+        if scan_worx==False:
+            break
         print('scan line '+str(scanline))
         for scanpoint in range(X_points):
+            if scan_worx==False:
+                break
             print('- point '+str(scanpoint))
             file.write('\r\nLine '+str(scanline)+', point '+str(scanpoint))
             if scanline%2==0:
@@ -454,8 +458,11 @@ def scan_button_click():
         scan_worx=True
         thread_scan = Thread(target=scan_function)
         window.after_idle(thread_scan.start)
-    else:
-        scan_worx=False
+
+def stop_button_click():
+    global scan_worx
+    scan_worx=False
+    #TODO: ADD OTHER FLAG - ONE MAY START OTHER SCAN THREAD WHEN NOT FINISHED!!!
 
 ############################# CHECK GRBL CONFIGURATION ########################
 if offline==False:
@@ -556,7 +563,7 @@ button_start = Button(master=frame_move_params, text="START", height = 3, width=
 button_start.grid(row=8, column=0, padx=5, pady=5)
 button_pause= Button(master=frame_move_params, text="PAUSE", height = 3, width=10, bg='orange', fg='black', font=(100))
 button_pause.grid(row=8, column=1, padx=5, pady=5)
-button_stop= Button(master=frame_move_params, text="STOP", height = 3, width=10, bg='red', fg='black', font=(100))
+button_stop= Button(master=frame_move_params, text="STOP", height = 3, width=10, bg='red', fg='black', font=(100), command=stop_button_click)
 button_stop.grid(row=8, column=2, padx=5, pady=5)
 
 ############################## JOG BUTTONS
