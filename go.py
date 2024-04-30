@@ -19,9 +19,10 @@ def go(set_x, set_y):
         else:
             print('WARNING! GOING TO START MOVING BEYOND PROGRAMMED LIMITS!')
 
-    for line in ['$X','G0 X-'+set_x+' Y-'+set_y]:
+    #for line in ['$X','G0 X-'+set_x+' Y-'+set_y]:
     #for line in ['G0 X-'+set_x+' Y-'+set_y]:
-        print('sending line '+line)
+    for line in ['$X','G0 X-'+set_x,'G0 Y-'+set_y]:
+        print('SEND: '+line)
         grbl.write(line.encode('utf-8') + b'\n')
         ans=grbl.read_until(b'ok\r\n')
         print('RECEIVED: '+str(ans))
